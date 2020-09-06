@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,28 +17,32 @@ namespace OpenTracingSample
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services
+                .AddOpenTracing()
+                .AddLogging()
+                .AddSingleton(serviceProvider =>
+                {
+                    var serviceName = serviceProvider.GetRequiredService<IWebHostEnvironment>().ApplicationName;
+                    Environment.SetEnvironmentVariable("JAEGER_SERVICE_NAME", serviceName);
+                    Environment.SetEnvironmentVariable("JAEGER_SAMPLER_TYPE", "const");
+                    var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+                    var config = Jaeger.Configuration.FromEnv(loggerFactory);
+                    return config.GetTracer();
+                });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
-            }
 
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            app
+                .UseRouting()
+                .UseAuthorization()
+                .UseEndpoints(endpoints => endpoints.MapControllers());
         }
     }
 }
