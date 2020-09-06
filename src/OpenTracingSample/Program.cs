@@ -14,6 +14,7 @@ namespace OpenTracingSample
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
+                .Enrich.WithOpenTracingContext()
                 .WriteTo.Console()
                 .WriteTo.OpenTracing()
                 .CreateLogger();

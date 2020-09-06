@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTracing.Util;
 
 namespace OpenTracingSample
 {
@@ -22,8 +23,6 @@ namespace OpenTracingSample
         {
             services.AddControllers();
             services
-                .AddLogging()
-                .AddOpenTracing()
                 .AddSingleton(serviceProvider =>
                 {
                     var serviceName = serviceProvider.GetRequiredService<IWebHostEnvironment>().ApplicationName;
@@ -31,8 +30,11 @@ namespace OpenTracingSample
                     Environment.SetEnvironmentVariable(Jaeger.Configuration.JaegerSamplerType, ConstSampler.Type);
                     var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
                     var config = Jaeger.Configuration.FromEnv(loggerFactory);
-                    return config.GetTracer();
-                });
+                    var tracer = config.GetTracer();
+                    GlobalTracer.RegisterIfAbsent(tracer);
+                    return tracer;
+                })
+                .AddOpenTracing();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
