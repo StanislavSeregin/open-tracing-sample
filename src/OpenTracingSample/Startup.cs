@@ -26,8 +26,8 @@ namespace OpenTracingSample
                 .AddSingleton(serviceProvider =>
                 {
                     var serviceName = serviceProvider.GetRequiredService<IWebHostEnvironment>().ApplicationName;
-                    Environment.SetEnvironmentVariable("JAEGER_SERVICE_NAME", serviceName);
-                    Environment.SetEnvironmentVariable("JAEGER_SAMPLER_TYPE", "const");
+                    Environment.SetEnvironmentVariable(Jaeger.Configuration.JaegerServiceName, serviceName);
+                    Environment.SetEnvironmentVariable(Jaeger.Configuration.JaegerSamplerType, "const");
                     var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
                     var config = Jaeger.Configuration.FromEnv(loggerFactory);
                     return config.GetTracer();
