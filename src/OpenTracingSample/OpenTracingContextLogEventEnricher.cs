@@ -15,8 +15,8 @@ namespace OpenTracingSample
             if (tracer?.ActiveSpan == null)
                 return;
 
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", tracer.ActiveSpan.Context.TraceId));
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SpanId", tracer.ActiveSpan.Context.SpanId));
+            //logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", tracer.ActiveSpan.Context.TraceId));
+            //logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SpanId", tracer.ActiveSpan.Context.SpanId));
         }
     }
 

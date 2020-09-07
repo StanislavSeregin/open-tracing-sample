@@ -11,6 +11,12 @@ namespace OpenTracingSample
 {
     public class OpenTracingSink : ILogEventSink
     {
+        private const string Level = "level";
+        private const string Undefined = "Undefined";
+        private const string Log = "log";
+        private const string MessageTemplate = "message.template";
+        private const string LoggingError = "mbv.common.logging.error";
+
         private readonly ITracer _tracer;
         private readonly IFormatProvider _formatProvider;
 
@@ -22,40 +28,42 @@ namespace OpenTracingSample
 
         public void Emit(LogEvent logEvent)
         {
-            ISpan span = _tracer.ActiveSpan;
-            if (span == null)
-                return;
-
-            var fields = new Dictionary<string, object>
+            var span = _tracer.ActiveSpan;
+            if (_tracer.ActiveSpan != null)
             {
-                { "component", logEvent.Properties["SourceContext"] },
-                { "level", logEvent.Level.ToString() }
+                var logEventDict = GetLogEventDict(logEvent);
+                span.Log(logEventDict);
+            }
+        }
+
+        private Dictionary<string, object> GetLogEventDict(LogEvent logEvent)
+        {
+            var logEventDict = new Dictionary<string, object>
+            {
+                { Level, logEvent?.Level.ToString() ?? Undefined },
+                { LogFields.Event, Log }
             };
 
-            fields[LogFields.Event] = "log";
             try
             {
-                fields[LogFields.Message] = logEvent.RenderMessage(_formatProvider);
-                fields["message.template"] = logEvent.MessageTemplate.Text;
-
+                logEventDict[LogFields.Message] = logEvent.RenderMessage(_formatProvider);
+                logEventDict[MessageTemplate] = logEvent.MessageTemplate.Text;
                 if (logEvent.Exception != null)
                 {
-                    fields[LogFields.ErrorKind] = logEvent.Exception.GetType().FullName;
-                    fields[LogFields.ErrorObject] = logEvent.Exception;
+                    logEventDict[LogFields.ErrorKind] = logEvent.Exception.GetType().FullName;
+                    logEventDict[LogFields.ErrorObject] = logEvent.Exception;
                 }
 
                 if (logEvent.Properties != null)
-                {
                     foreach (var property in logEvent.Properties)
-                        fields[property.Key] = property.Value;
-                }
+                        logEventDict[property.Key] = property.Value;
             }
-            catch (Exception logException)
+            catch (Exception e)
             {
-                fields["mbv.common.logging.error"] = logException.ToString();
+                logEventDict[LoggingError] = $"{e}";
             }
 
-            span.Log(fields);
+            return logEventDict;
         }
     }
 
